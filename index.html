@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workstream Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'EJ Sans Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 400;
+            background: #F1F5F9;
+            color: #1E293B;
+            min-height: 100vh;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: #1B2F4E;
+            color: white;
+            padding: 18px 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .header h1 { font-size: 1.15rem; font-weight: 600; letter-spacing: 0.01em; }
+        .header .subtitle { font-size: 0.8rem; font-weight: 300; opacity: 0.75; margin-top: 2px; }
+
+        /* ── Main tile page ── */
+        #main-page { padding: 36px 40px; }
+
+        .page-intro {
+            font-size: 0.9rem;
+            font-weight: 300;
+            color: #64748B;
+            margin-bottom: 28px;
+        }
+
+        .tiles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+            gap: 18px;
+        }
+
+        .tile {
+            background: white;
+            border-radius: 12px;
+            padding: 26px 18px 22px;
+            cursor: pointer;
+            transition: transform 0.14s ease, box-shadow 0.14s ease;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            border-top: 4px solid;
+            text-align: center;
+            user-select: none;
+        }
+        .tile:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+        }
+        .tile-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 1.35rem;
+        }
+        .tile-name {
+            font-weight: 500;
+            font-size: 0.88rem;
+            color: #1E293B;
+            line-height: 1.3;
+        }
+
+        /* ── Detail page ── */
+        #detail-page { display: none; padding: 32px 40px; }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            color: #3B82F6;
+            font-size: 0.875rem;
+            font-family: 'EJ Sans Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            cursor: pointer;
+            padding: 0;
+            margin-bottom: 22px;
+            font-weight: 400;
+        }
+        .back-btn:hover { color: #1D4ED8; text-decoration: underline; }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .detail-header h2 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #0F172A;
+        }
+        .ws-badge {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: white;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        /* ── Section panels ── */
+        .section-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            margin-bottom: 28px;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header.ready {
+            background: #DCFCE7;
+            border-bottom: 2px solid #16A34A;
+        }
+        .section-header.coming-soon {
+            background: #FEF9C3;
+            border-bottom: 2px solid #CA8A04;
+        }
+        .section-header h3 { font-size: 0.95rem; font-weight: 600; }
+        .section-header.ready h3 { color: #15803D; }
+        .section-header.coming-soon h3 { color: #92400E; }
+
+        .section-label {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-left: auto;
+        }
+        .section-label.ready { background: #16A34A; color: white; }
+        .section-label.coming-soon { background: #D97706; color: white; }
+
+        /* ── Two-column layout ── */
+        .section-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+        .section-col { padding: 20px 24px; }
+        .section-col:first-child { border-right: 1px solid #E2E8F0; }
+
+        .col-title {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #64748B;
+            margin-bottom: 18px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #E2E8F0;
+        }
+
+        /* ── Asset type blocks ── */
+        .asset-type { margin-bottom: 22px; }
+
+        .asset-type-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #334155;
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+        }
+        .asset-count {
+            background: #E2E8F0;
+            border-radius: 10px;
+            padding: 1px 8px;
+            font-size: 0.7rem;
+            color: #64748B;
+            font-weight: 400;
+        }
+
+        /* ── Asset tables ── */
+        .asset-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .asset-table th {
+            text-align: left;
+            padding: 5px 8px;
+            font-size: 0.7rem;
+            color: #94A3B8;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #F1F5F9;
+        }
+        .asset-table td {
+            padding: 7px 8px;
+            border-bottom: 1px solid #F8FAFC;
+            vertical-align: middle;
+            color: #334155;
+        }
+        .asset-table tr:last-child td { border-bottom: none; }
+        .asset-table tbody tr:hover td { background: #F8FAFC; }
+
+        .placeholder-row td {
+            color: #CBD5E1;
+            font-style: italic;
+            font-size: 0.77rem;
+        }
+
+        /* ── Status chips ── */
+        .chip {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.68rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .chip-use     { background: #DCFCE7; color: #15803D; }
+        .chip-review  { background: #DBEAFE; color: #1D4ED8; }
+        .chip-soon    { background: #FEF9C3; color: #92400E; }
+        .chip-draft   { background: #F3E8FF; color: #7E22CE; }
+
+        .asset-link {
+            color: #3B82F6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .asset-link:hover { text-decoration: underline; }
+
+        /* ── Communications table column alignment ── */
+        .section-col:last-child .asset-table {
+            table-layout: fixed;
+        }
+        .section-col:last-child .asset-table th:nth-child(1),
+        .section-col:last-child .asset-table td:nth-child(1) { width: 38%; }
+        .section-col:last-child .asset-table th:nth-child(2),
+        .section-col:last-child .asset-table td:nth-child(2) { width: 22%; }
+        .section-col:last-child .asset-table th:nth-child(3),
+        .section-col:last-child .asset-table td:nth-child(3) { width: 22%; }
+        .section-col:last-child .asset-table th:nth-child(4),
+        .section-col:last-child .asset-table td:nth-child(4) { width: 18%; }
+
+        /* ── Edit mode ── */
+        [contenteditable]:hover {
+            outline: 1px dashed #CBD5E1;
+            border-radius: 3px;
+            cursor: text;
+        }
+        [contenteditable]:focus {
+            outline: 2px solid #3B82F6;
+            background: #EFF6FF;
+            border-radius: 3px;
+            cursor: text;
+        }
+        [contenteditable]:empty:before {
+            content: attr(data-placeholder);
+            color: #CBD5E1;
+            font-style: italic;
+            pointer-events: none;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #E2E8F0;
+            cursor: pointer;
+            font-size: 1.1rem;
+            line-height: 1;
+            padding: 2px 5px;
+            border-radius: 4px;
+            transition: color 0.12s, background 0.12s;
+        }
+        .delete-btn:hover { color: #EF4444; background: #FEF2F2; }
+
+        .add-row-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 100%;
+            background: none;
+            border: 1px dashed #CBD5E1;
+            color: #94A3B8;
+            font-size: 0.75rem;
+            font-family: 'EJ Sans Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-weight: 400;
+            cursor: pointer;
+            padding: 5px 12px;
+            border-radius: 6px;
+            margin-top: 4px;
+            transition: all 0.12s;
+        }
+        .add-row-btn:hover { border-color: #3B82F6; color: #3B82F6; background: #EFF6FF; }
+
+        /* ── Mode toggle switch ── */
+        .mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .mode-label {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: rgba(255,255,255,0.8);
+        }
+        .toggle-switch {
+            position: relative;
+            width: 46px;
+            height: 25px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.2);
+            border-radius: 25px;
+            transition: background 0.2s;
+        }
+        .toggle-slider:before {
+            content: '';
+            position: absolute;
+            width: 19px;
+            height: 19px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .toggle-switch input:checked + .toggle-slider { background: #3B82F6; }
+        .toggle-switch input:checked + .toggle-slider:before { transform: translateX(21px); }
+
+        /* ── View mode — hide all edit controls ── */
+        body.view-mode .edit-control,
+        body.view-mode .add-row-btn,
+        body.view-mode .tile-add,
+        body.view-mode .save-btn { display: none !important; }
+
+        body.view-mode .tile-controls { opacity: 0 !important; pointer-events: none !important; }
+
+        body.view-mode [contenteditable] {
+            pointer-events: none;
+            outline: none !important;
+            cursor: default;
+        }
+
+        .save-btn {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.35);
+            padding: 7px 18px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            font-family: 'EJ Sans Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            transition: background 0.12s, border-color 0.12s;
+            margin-left: 12px;
+        }
+        .save-btn:hover { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.6); }
+
+        /* ── Tile edit controls ── */
+        .tile { position: relative; }
+        .tile-controls {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            display: flex;
+            gap: 3px;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 2;
+        }
+        .tile:hover .tile-controls { opacity: 1; }
+        .tile-ctrl-btn {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 0.65rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.12s;
+            line-height: 1;
+        }
+        .tile-ctrl-btn.edit-btn { background: #DBEAFE; color: #2563EB; }
+        .tile-ctrl-btn.edit-btn:hover { background: #2563EB; color: white; }
+        .tile-ctrl-btn.del-btn  { background: #FEE2E2; color: #EF4444; }
+        .tile-ctrl-btn.del-btn:hover  { background: #EF4444; color: white; }
+        .tile-name[contenteditable="true"] {
+            outline: 2px solid #3B82F6;
+            background: #EFF6FF;
+            border-radius: 4px;
+            padding: 2px 4px;
+            cursor: text;
+        }
+        .tile-add {
+            background: white;
+            border-radius: 12px;
+            padding: 26px 18px 22px;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+            border: 2px dashed #CBD5E1;
+            text-align: center;
+            color: #94A3B8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.14s;
+            user-select: none;
+            min-height: 130px;
+        }
+        .tile-add:hover { border-color: #3B82F6; color: #3B82F6; background: #EFF6FF; }
+        .tile-add-icon { font-size: 1.6rem; }
+        .tile-add-label { font-size: 0.85rem; font-weight: 500; }
+
+        /* ── Responsive ── */
+        @media (max-width: 860px) {
+            .section-columns { grid-template-columns: 1fr; }
+            .section-col:first-child { border-right: none; border-bottom: 1px solid #E2E8F0; }
+        }
+        @media (max-width: 600px) {
+            #main-page, #detail-page { padding: 20px; }
+            .header { padding: 16px 20px; }
+        }
+    </style>
+</head>
+<body class="">
+
+<div class="header">
+    <div>
+        <h1>Change and Training Progress</h1>
+        <div class="subtitle">Project Keystone - HC &amp; Finance Modernization</div>
+    </div>
+    <div class="mode-toggle">
+        <span class="mode-label">View</span>
+        <label class="toggle-switch">
+            <input type="checkbox" id="edit-toggle" onchange="toggleEditMode(this.checked)">
+            <span class="toggle-slider"></span>
+        </label>
+        <span class="mode-label">Edit</span>
+    </div>
+    <button class="save-btn" id="save-btn" onclick="saveFile()">💾 Save</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN PAGE — Workstream tile grid
+════════════════════════════════════════════════ -->
+<div id="main-page" style="display: block;">
+    <p class="page-intro">Select a workstream to view its training and communications dashboard.</p>
+    <div class="tiles-grid" id="tiles-grid"><div class="tile" style="border-top-color: rgb(59, 130, 246);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#3B82F622;">📋</div>
+            <div class="tile-name">Position Management</div>
+        </div><div class="tile" style="border-top-color: rgb(16, 185, 129);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#10B98122;">🏥</div>
+            <div class="tile-name">Benefits</div>
+        </div><div class="tile" style="border-top-color: rgb(139, 92, 246);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#8B5CF622;">👥</div>
+            <div class="tile-name">Core HR</div>
+        </div><div class="tile" style="border-top-color: rgb(245, 158, 11);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#F59E0B22;">💰</div>
+            <div class="tile-name">Compensation</div>
+        </div><div class="tile" style="border-top-color: rgb(6, 182, 212);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#06B6D422;">⏱</div>
+            <div class="tile-name">Time &amp; Labor</div>
+        </div><div class="tile" style="border-top-color: rgb(239, 68, 68);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#EF444422;">📅</div>
+            <div class="tile-name">Absence</div>
+        </div><div class="tile" style="border-top-color: rgb(99, 102, 241);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#6366F122;">🔍</div>
+            <div class="tile-name">Talent Acquisition</div>
+        </div><div class="tile" style="border-top-color: rgb(5, 150, 105);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#05966922;">💳</div>
+            <div class="tile-name">Payroll</div>
+        </div><div class="tile" style="border-top-color: rgb(236, 72, 153);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#EC489922;">⭐</div>
+            <div class="tile-name">Talent Management</div>
+        </div><div class="tile" style="border-top-color: rgb(14, 165, 233);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#0EA5E922;">📚</div>
+            <div class="tile-name">Learning</div>
+        </div><div class="tile" style="border-top-color: rgb(132, 204, 22);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#84CC1622;">🔧</div>
+            <div class="tile-name">T&amp;L Extension</div>
+        </div><div class="tile" style="border-top-color: rgb(100, 116, 139);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#64748B22;">📊</div>
+            <div class="tile-name">Reporting</div>
+        </div><div class="tile" style="border-top-color: rgb(124, 58, 237);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#7C3AED22;">🌐</div>
+            <div class="tile-name">Gateway</div>
+        </div><div class="tile" style="border-top-color: rgb(220, 38, 38);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#DC262622;">📩</div>
+            <div class="tile-name">ICM</div>
+        </div><div class="tile" style="border-top-color: rgb(8, 145, 178);">
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">✎</button>
+                <button class="tile-ctrl-btn del-btn" title="Delete">×</button>
+            </div>
+            <div class="tile-icon" style="background:#0891B222;">✨</div>
+            <div class="tile-name">User Experience</div>
+        </div><div class="tile-add"><div class="tile-add-icon">+</div><div class="tile-add-label">Add Workstream</div></div></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     DETAIL PAGE — Workstream dashboard
+════════════════════════════════════════════════ -->
+<div id="detail-page" style="display: none;">
+
+    <button class="back-btn" onclick="goBack()">← Back to All Workstreams</button>
+
+    <div class="detail-header">
+        <h2 id="detail-title">Position Management</h2>
+        <span class="ws-badge" id="detail-badge" style="background: rgb(59, 130, 246);">Position Management</span>
+    </div>
+
+    <!-- ─── TOP SECTION: Ready ─── -->
+    <div class="section-panel">
+        <div class="section-header ready">
+            <span style="font-size:1rem;">✓</span>
+            <h3>Ready for Use &nbsp;/&nbsp; Ready for Review</h3>
+            <span class="section-label ready">Available Now</span>
+        </div>
+        <div class="section-columns">
+
+            <!-- TRAINING -->
+            <div class="section-col">
+                <div class="col-title">📚 Training</div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Job Aid <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Status</th><th>Owner</th><th>Link</th></tr></thead>
+                        <tbody>
+                            <!-- TEMPLATE ROW (duplicate and fill in):
+                            <tr>
+                                <td>Job Aid Title</td>
+                                <td><span class="chip chip-use">Ready for Use</span></td>
+                                <td>Owner Name</td>
+                                <td><a class="asset-link" href="#">View</a></td>
+                            </tr>
+                            -->
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add job aid entries here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">SOP <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Status</th><th>Owner</th><th>Link</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add SOP entries here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">vILT <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Status</th><th>Owner</th><th>Link</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add vILT entries here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">eLearning / WBT <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Status</th><th>Owner</th><th>Link</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add eLearning entries here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Quick Reference Guide <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Status</th><th>Owner</th><th>Link</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add QRG entries here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Overview Videos <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Status</th><th>Owner</th><th>Link</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add video entries here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- COMMUNICATIONS -->
+            <div class="section-col">
+                <div class="col-title">💬 Communications</div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Go-Live Series Messages <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Message Name</th><th>Status</th><th>Audience</th><th>Link</th></tr></thead>
+                        <tbody>
+                            <!-- TEMPLATE ROW:
+                            <tr>
+                                <td>Message #1 — Subject Line</td>
+                                <td><span class="chip chip-review">Ready for Review</span></td>
+                                <td>All Employees</td>
+                                <td><a class="asset-link" href="#">View</a></td>
+                            </tr>
+                            -->
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add go-live messages here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Learning Checklists <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Checklist Name</th><th>Status</th><th>Audience</th><th>Link</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add learning checklists here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Leader Communications <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Communication Name</th><th>Status</th><th>Audience</th><th>Link</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add leader communications here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Change Impact Assessment <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Assessment Name</th><th>Status</th><th>Audience</th><th>Link</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add change impact assessments here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div><!-- end ready section -->
+
+    <!-- ─── BOTTOM SECTION: Coming Soon ─── -->
+    <div class="section-panel">
+        <div class="section-header coming-soon">
+            <span style="font-size:1rem;">⌛</span>
+            <h3>Coming Soon — Ready Within the Next Few Weeks</h3>
+            <span class="section-label coming-soon">In Progress</span>
+        </div>
+        <div class="section-columns">
+
+            <!-- TRAINING -->
+            <div class="section-col">
+                <div class="col-title">📚 Training</div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Job Aid <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Target Date</th><th>Owner</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            <!-- TEMPLATE ROW:
+                            <tr>
+                                <td>Job Aid Title</td>
+                                <td>MM/DD/YYYY</td>
+                                <td>Owner Name</td>
+                                <td>Brief note on status</td>
+                            </tr>
+                            -->
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add upcoming job aids here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">SOP <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Target Date</th><th>Owner</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add upcoming SOPs here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">vILT <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Target Date</th><th>Owner</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add upcoming vILTs here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">eLearning / WBT <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Target Date</th><th>Owner</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add upcoming eLearning here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Quick Reference Guide <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Target Date</th><th>Owner</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add upcoming QRGs here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Overview Videos <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Asset Name</th><th>Target Date</th><th>Owner</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add upcoming videos here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- COMMUNICATIONS -->
+            <div class="section-col">
+                <div class="col-title">💬 Communications</div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Go-Live Series Messages <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Message Name</th><th>Target Date</th><th>Audience</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add upcoming go-live messages here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Learning Checklists <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Checklist Name</th><th>Target Date</th><th>Audience</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add upcoming learning checklists here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="asset-type">
+                    <div class="asset-type-header">Leader Communications <span class="asset-count">0</span></div>
+                    <table class="asset-table">
+                        <thead><tr><th>Communication Name</th><th>Target Date</th><th>Audience</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            <tr class="placeholder-row"><td colspan="4">No items yet — add upcoming leader communications here</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div><!-- end coming soon section -->
+
+</div><!-- end detail page -->
+
+<script>
+    let workstreams = [
+        {
+                "name": "Position Management",
+                "color": "#3B82F6",
+                "icon": "&#128203;"
+        },
+        {
+                "name": "Benefits",
+                "color": "#10B981",
+                "icon": "&#127973;"
+        },
+        {
+                "name": "Core HR",
+                "color": "#8B5CF6",
+                "icon": "&#128101;"
+        },
+        {
+                "name": "Compensation",
+                "color": "#F59E0B",
+                "icon": "&#128176;"
+        },
+        {
+                "name": "Time & Labor",
+                "color": "#06B6D4",
+                "icon": "&#9201;"
+        },
+        {
+                "name": "Absence",
+                "color": "#EF4444",
+                "icon": "&#128197;"
+        },
+        {
+                "name": "Talent Acquisition",
+                "color": "#6366F1",
+                "icon": "&#128269;"
+        },
+        {
+                "name": "Payroll",
+                "color": "#059669",
+                "icon": "&#128179;"
+        },
+        {
+                "name": "Talent Management",
+                "color": "#EC4899",
+                "icon": "&#11088;"
+        },
+        {
+                "name": "Learning",
+                "color": "#0EA5E9",
+                "icon": "&#128218;"
+        },
+        {
+                "name": "T&L Extension",
+                "color": "#84CC16",
+                "icon": "&#128295;"
+        },
+        {
+                "name": "Reporting",
+                "color": "#64748B",
+                "icon": "&#128202;"
+        },
+        {
+                "name": "Gateway",
+                "color": "#7C3AED",
+                "icon": "&#127760;"
+        },
+        {
+                "name": "ICM",
+                "color": "#DC2626",
+                "icon": "&#128233;"
+        },
+        {
+                "name": "User Experience",
+                "color": "#0891B2",
+                "icon": "&#10024;"
+        }
+];
+
+    const TILE_COLORS = [
+        "#3B82F6","#10B981","#8B5CF6","#F59E0B","#06B6D4",
+        "#EF4444","#6366F1","#059669","#EC4899","#0EA5E9",
+        "#84CC16","#64748B","#7C3AED","#DC2626","#0891B2"
+    ];
+
+    const grid = document.getElementById("tiles-grid");
+
+    // ── Build tile grid ──────────────────────────────
+    function buildTileGrid() {
+        grid.innerHTML = '';
+        workstreams.forEach((ws, i) => grid.appendChild(createTile(ws, i)));
+
+        // "+ Add Workstream" tile
+        const addTile = document.createElement('div');
+        addTile.className = 'tile-add';
+        addTile.innerHTML = '<div class="tile-add-icon">&#43;</div><div class="tile-add-label">Add Workstream</div>';
+        addTile.addEventListener('click', addWorkstream);
+        grid.appendChild(addTile);
+    }
+
+    function createTile(ws, i) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.style.borderTopColor = ws.color;
+        tile.innerHTML = `
+            <div class="tile-controls">
+                <button class="tile-ctrl-btn edit-btn" title="Rename">&#9998;</button>
+                <button class="tile-ctrl-btn del-btn"  title="Delete">&times;</button>
+            </div>
+            <div class="tile-icon" style="background:${ws.color}22;">${ws.icon}</div>
+            <div class="tile-name">${ws.name}</div>
+        `;
+
+        // Navigate — but not when clicking controls or while name is being edited
+        tile.addEventListener('click', (e) => {
+            if (!e.target.closest('.tile-controls') &&
+                tile.querySelector('.tile-name').contentEditable !== 'true') {
+                openWorkstream(i);
+            }
+        });
+
+        // ✏️ Rename button
+        tile.querySelector('.edit-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const nameEl = tile.querySelector('.tile-name');
+            nameEl.contentEditable = 'true';
+            nameEl.focus();
+            const range = document.createRange();
+            range.selectNodeContents(nameEl);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+
+            const save = () => {
+                nameEl.contentEditable = 'false';
+                const newName = nameEl.textContent.trim();
+                ws.name = newName || ws.name;
+                nameEl.textContent = ws.name;
+            };
+            nameEl.addEventListener('blur', save, { once: true });
+            nameEl.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter')  { ev.preventDefault(); nameEl.blur(); }
+                if (ev.key === 'Escape') { nameEl.textContent = ws.name; nameEl.blur(); }
+            }, { once: true });
+        });
+
+        // × Delete button
+        tile.querySelector('.del-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm(`Remove "${ws.name}" from the dashboard?`)) {
+                workstreams.splice(i, 1);
+                buildTileGrid();
+            }
+        });
+
+        return tile;
+    }
+
+    function addWorkstream() {
+        const name = prompt('Enter the new workstream name:');
+        if (!name || !name.trim()) return;
+        const color = TILE_COLORS[workstreams.length % TILE_COLORS.length];
+        workstreams.push({ name: name.trim(), color, icon: '&#128203;' });
+        buildTileGrid();
+    }
+
+    // ── Navigation ───────────────────────────────────
+    function openWorkstream(index) {
+        const ws = workstreams[index];
+        document.getElementById("detail-title").textContent = ws.name;
+        const badge = document.getElementById("detail-badge");
+        badge.textContent = ws.name;
+        badge.style.background = ws.color;
+        document.getElementById("main-page").style.display = "none";
+        document.getElementById("detail-page").style.display = "block";
+        window.scrollTo(0, 0);
+    }
+
+    function goBack() {
+        document.getElementById("detail-page").style.display = "none";
+        document.getElementById("main-page").style.display = "block";
+        window.scrollTo(0, 0);
+    }
+
+    // ── Detail page edit mode ────────────────────────
+    let editInitialized = false;
+
+    function initEditMode() {
+        if (editInitialized) return;
+        editInitialized = true;
+
+        document.querySelectorAll('#detail-page .asset-table').forEach(table => {
+            const headerRow = table.querySelector('thead tr');
+            const deleteTh = document.createElement('th');
+            deleteTh.className = 'edit-control';
+            deleteTh.style.width = '28px';
+            headerRow.appendChild(deleteTh);
+
+            table.querySelectorAll('tbody tr').forEach(row => {
+                if (row.classList.contains('placeholder-row')) {
+                    const emptyTd = document.createElement('td');
+                    emptyTd.className = 'edit-control';
+                    row.appendChild(emptyTd);
+                } else {
+                    row.querySelectorAll('td').forEach(td => { td.contentEditable = 'true'; });
+                    addDeleteButton(row);
+                }
+            });
+
+            const addBtn = document.createElement('button');
+            addBtn.className = 'add-row-btn edit-control';
+            addBtn.innerHTML = '&#43; Add Row';
+            addBtn.addEventListener('click', () => addRow(table));
+            table.parentNode.insertBefore(addBtn, table.nextSibling);
+        });
+
+        document.getElementById('detail-page').addEventListener('input', updateCounts);
+        updateCounts();
+    }
+
+    function addRow(table) {
+        const tbody = table.querySelector('tbody');
+        const colCount = table.querySelectorAll('thead th').length - 1;
+        const placeholder = tbody.querySelector('.placeholder-row');
+        if (placeholder) placeholder.remove();
+
+        const newRow = document.createElement('tr');
+        for (let i = 0; i < colCount; i++) {
+            const td = document.createElement('td');
+            td.contentEditable = 'true';
+            td.setAttribute('data-placeholder', i === 0 ? 'Enter name...' : '');
+            newRow.appendChild(td);
+        }
+        addDeleteButton(newRow);
+        tbody.appendChild(newRow);
+        newRow.querySelector('td').focus();
+        updateCounts();
+    }
+
+    function addDeleteButton(row) {
+        const td = document.createElement('td');
+        td.className = 'edit-control';
+        td.style.cssText = 'text-align:center; padding:4px; vertical-align:middle;';
+        const btn = document.createElement('button');
+        btn.className = 'delete-btn edit-control';
+        btn.innerHTML = '&times;';
+        btn.title = 'Delete row';
+        btn.addEventListener('click', () => {
+            const tbody = row.closest('tbody');
+            const table = tbody.closest('table');
+            row.remove();
+            updateCounts();
+            if (!tbody.querySelector('tr:not(.placeholder-row)')) {
+                const colCount = table.querySelectorAll('thead th').length - 1;
+                const placeholder = document.createElement('tr');
+                placeholder.className = 'placeholder-row';
+                const msgTd = document.createElement('td');
+                msgTd.colSpan = colCount;
+                msgTd.textContent = 'No items — click + Add Row to get started';
+                placeholder.appendChild(msgTd);
+                const emptyTd = document.createElement('td');
+                emptyTd.className = 'edit-control';
+                placeholder.appendChild(emptyTd);
+                tbody.appendChild(placeholder);
+            }
+        });
+        td.appendChild(btn);
+        row.appendChild(td);
+    }
+
+    function updateCounts() {
+        document.querySelectorAll('#detail-page .asset-type').forEach(block => {
+            const count = block.querySelectorAll('tbody tr:not(.placeholder-row)').length;
+            block.querySelector('.asset-count').textContent = count;
+        });
+    }
+
+    // ── Save file ────────────────────────────────────
+    function saveFile() {
+        const clone = document.documentElement.cloneNode(true);
+
+        // Strip dynamically added edit controls
+        clone.querySelectorAll('.edit-control').forEach(el => el.remove());
+        clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+
+        // Persist current workstreams array into the saved script
+        const scriptEl = Array.from(clone.querySelectorAll('script'))
+            .find(s => s.textContent.includes('let workstreams'));
+        if (scriptEl) {
+            scriptEl.textContent = scriptEl.textContent.replace(
+                /let workstreams = \[[\s\S]*?\];/,
+                'let workstreams = ' + JSON.stringify(workstreams, null, 8) + ';'
+            );
+        }
+
+        // Reset view to main page
+        clone.querySelector('#detail-page').style.display = 'none';
+        clone.querySelector('#main-page').style.display   = 'block';
+
+        const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+        const blob = new Blob([html], { type: 'text/html' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = 'Change and Training Progress Dashboard.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        const btn = document.getElementById('save-btn');
+        btn.innerHTML = '&#10003; Saved!';
+        btn.style.background  = '#16A34A';
+        btn.style.borderColor = '#16A34A';
+        setTimeout(() => {
+            btn.innerHTML = '&#128190; Save';
+            btn.style.background  = '';
+            btn.style.borderColor = '';
+        }, 2000);
+    }
+
+    // ── Edit / View mode toggle ──────────────────────
+    function toggleEditMode(isEdit) {
+        if (isEdit) {
+            document.body.classList.remove('view-mode');
+        } else {
+            document.body.classList.add('view-mode');
+            // Commit any in-progress edits
+            if (document.activeElement && document.activeElement.contentEditable === 'true') {
+                document.activeElement.blur();
+            }
+            // Close any open tile name edits
+            document.querySelectorAll('.tile-name[contenteditable="true"]').forEach(el => {
+                el.contentEditable = 'false';
+            });
+        }
+    }
+
+    // ── Init ─────────────────────────────────────────
+    buildTileGrid();
+    initEditMode();
+</script>
+
+
+
+</body></html>
