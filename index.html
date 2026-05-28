@@ -310,6 +310,40 @@
         .link-btn:hover { color: #3B82F6; }
         .link-btn.has-url { color: #3B82F6; }
 
+        /* ── Status cell ── */
+        .status-cell { vertical-align: middle; }
+        .status-chip {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.72rem;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .status-chip.approved     { background: #DCFCE7; color: #15803D; }
+        .status-chip.ready-review { background: #DBEAFE; color: #1D4ED8; }
+        .status-chip.in-progress  { background: #FEF9C3; color: #92400E; }
+        .status-chip.not-started  { background: #F3E8FF; color: #7E22CE; }
+        .status-chip.empty        { color: #CBD5E1; font-style: italic; font-size: 0.72rem; }
+        .status-select {
+            width: 100%;
+            padding: 4px 6px;
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-family: 'EJ Sans Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #334155;
+            background: white;
+            cursor: pointer;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .status-select:focus { border-color: #3B82F6; }
+        body.view-mode .status-select          { display: none !important; }
+        body.view-mode .status-chip            { display: inline-block; }
+        body:not(.view-mode) .status-select    { display: block; }
+        body:not(.view-mode) .status-chip      { display: none !important; }
+
         /* ── Edit mode ── */
         [contenteditable]:hover {
             outline: 1px dashed #CBD5E1;
@@ -1074,6 +1108,52 @@
         return td;
     }
 
+    // ── Status cell with dropdown ────────────────────
+    const STATUS_OPTIONS = ['Approved', 'Ready for Review', 'In Progress', 'Not Started'];
+
+    function getStatusClass(value) {
+        switch (value) {
+            case 'Approved':         return 'approved';
+            case 'Ready for Review': return 'ready-review';
+            case 'In Progress':      return 'in-progress';
+            case 'Not Started':      return 'not-started';
+            default:                 return 'empty';
+        }
+    }
+
+    function buildStatusCell(value) {
+        const td   = document.createElement('td');
+        td.className = 'status-cell';
+
+        // View mode: colored chip
+        const chip = document.createElement('span');
+        chip.className   = 'status-chip ' + getStatusClass(value);
+        chip.textContent = value || '—';
+        td.appendChild(chip);
+
+        // Edit mode: dropdown
+        const select = document.createElement('select');
+        select.className = 'status-select edit-control';
+        const blank = document.createElement('option');
+        blank.value = ''; blank.textContent = '— Select status —';
+        select.appendChild(blank);
+        STATUS_OPTIONS.forEach(opt => {
+            const option = document.createElement('option');
+            option.value       = opt;
+            option.textContent = opt;
+            if (opt === value) option.selected = true;
+            select.appendChild(option);
+        });
+        select.addEventListener('change', () => {
+            chip.className   = 'status-chip ' + getStatusClass(select.value);
+            chip.textContent = select.value || '—';
+            scheduleAutoSave();
+        });
+        td.appendChild(select);
+
+        return td;
+    }
+
     function buildDataRow(rowData) {
         const tr = document.createElement('tr');
         tr.dataset.rowId = rowData.id || '';
@@ -1083,13 +1163,21 @@
         const parts = raw.split('|||');
         tr.appendChild(buildNameCell(parts[0] || '', parts[1] || ''));
 
-        // Remaining cols: standard contenteditable
-        ['col2','col3','col4'].forEach(col => {
-            const td = document.createElement('td');
-            td.contentEditable = 'true';
-            td.textContent     = rowData[col] || '';
-            tr.appendChild(td);
-        });
+        // col2: Audience
+        const audTd = document.createElement('td');
+        audTd.contentEditable = 'true';
+        audTd.textContent     = rowData.col2 || '';
+        tr.appendChild(audTd);
+
+        // col3: Status — dropdown with color chips
+        tr.appendChild(buildStatusCell(rowData.col3 || ''));
+
+        // col4: Current Owner
+        const ownerTd = document.createElement('td');
+        ownerTd.contentEditable = 'true';
+        ownerTd.textContent     = rowData.col4 || '';
+        tr.appendChild(ownerTd);
+
         addDeleteButton(tr);
         return tr;
     }
@@ -1118,14 +1206,16 @@
                         const url = nameCell.dataset.url || '';
                         col1val   = url ? txt + '|||' + url : txt;
                     }
-                    const dataTds = tr.querySelectorAll('td:not(.edit-control):not(.name-cell)');
+                    // Audience + Owner tds (excludes name-cell, status-cell, edit-control)
+                    const dataTds  = tr.querySelectorAll('td:not(.edit-control):not(.name-cell):not(.status-cell)');
+                    const statusVal = tr.querySelector('.status-select')?.value || '';
                     rows.push({
                         workstream_id: currentWsId,
                         section: 'main', column_type: columnType, asset_type: assetType,
                         col1: col1val,
-                        col2: dataTds[0]?.textContent || '',
-                        col3: dataTds[1]?.textContent || '',
-                        col4: dataTds[2]?.textContent || '',
+                        col2: dataTds[0]?.textContent.trim() || '',
+                        col3: statusVal,
+                        col4: dataTds[1]?.textContent.trim() || '',
                         position: pos++
                     });
                 });
@@ -1196,14 +1286,18 @@
         if (ph) ph.style.display = 'none';
         const newRow = document.createElement('tr');
         newRow.dataset.rowId = '';
-        // First col: name cell with link button
+        // col1: Asset Name with link button
         newRow.appendChild(buildNameCell('', ''));
-        // Remaining cols: standard contenteditable
-        for (let i = 1; i < colCount; i++) {
-            const td = document.createElement('td');
-            td.contentEditable = 'true';
-            newRow.appendChild(td);
-        }
+        // col2: Audience
+        const audTd = document.createElement('td');
+        audTd.contentEditable = 'true';
+        newRow.appendChild(audTd);
+        // col3: Status dropdown
+        newRow.appendChild(buildStatusCell(''));
+        // col4: Current Owner
+        const ownerTd = document.createElement('td');
+        ownerTd.contentEditable = 'true';
+        newRow.appendChild(ownerTd);
         addDeleteButton(newRow);
         tbody.appendChild(newRow);
         newRow.querySelector('.name-edit-span').focus();
